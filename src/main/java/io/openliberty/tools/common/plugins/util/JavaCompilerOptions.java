@@ -35,8 +35,13 @@ public class JavaCompilerOptions {
      * Java release version
      */
     private String release;
-
+    
     /**
+     * encoding
+     */
+    private String encoding;
+
+	/**
      * Whether to show warnings. Default is false.
      */
     private boolean showWarnings = false;
@@ -55,7 +60,7 @@ public class JavaCompilerOptions {
         }
         addStringOption(options, "-source", source);
         addStringOption(options, "-target", target);
-        addStringOption(options, "--release", release);
+        addStringOption(options, "--encoding", encoding);
         return options;
     }
 
@@ -97,5 +102,13 @@ public class JavaCompilerOptions {
     public void setRelease(String release) {
         this.release = release;
     }
+    
+    public String getEncoding() {
+		return encoding;
+	}
+
+	public void setEncoding(String encoding) {
+		this.encoding = encoding;
+	}
 
 }
