@@ -2078,6 +2078,15 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
     }
 
     private void runShutdownHook(final ThreadPoolExecutor executor) {
+    	
+    	
+    	if (Boolean.getBoolean("SKSKSHUT")) {
+    		return;
+    	} else {
+    		System.out.println("SKSK: Continue shutdown");
+    	}
+    	
+    	
         if (!calledShutdownHook.getAndSet(true)) {
 
             if (trackingMode == FileTrackMode.POLLING || trackingMode == FileTrackMode.NOT_SET) {
