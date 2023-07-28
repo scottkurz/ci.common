@@ -393,6 +393,8 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
     private Map<File, Properties> propertyFilesMap;
     final private Set<FileAlterationObserver> fileObservers;
     final private Set<FileAlterationObserver> newFileObservers;
+    final private Set<String> fileObserverPathStrings;
+    final private Set<String> newFileObserverPathStrings;
     final private Set<FileAlterationObserver> cancelledFileObservers;
     private AtomicBoolean calledShutdownHook;
     private boolean gradle;
@@ -3217,7 +3219,9 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
      */
     private void consolidateFileObservers() {
         fileObservers.addAll(newFileObservers);
+        fileObserverPathStrings.addAll(newFileObserverPathStrings);
         newFileObservers.clear();
+        newFileObserverPathStrings.clear();
     }
 
     /**
@@ -3248,17 +3252,16 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
 
             // synchronize on the new observer set since only those are being updated in separate threads
             synchronized (newFileObservers) {
-                Set<FileAlterationObserver> tempCombinedObservers = new HashSet<FileAlterationObserver>();
-                tempCombinedObservers.addAll(fileObservers);
-                tempCombinedObservers.addAll(newFileObservers);
-
+//                Set<Path> tempCombinedObserverPaths = new HashSet<Path>();
+//                tempCombinedObserverPaths.addAll(fileObserverPaths);
+//                tempCombinedObserverPaths.addAll(newFileObserverPaths);
+//
                 // if this path is already observed, ignore it
-                for (FileAlterationObserver observer : tempCombinedObservers) {
-                    if (parentPath.equals(observer.getDirectory().getCanonicalPath())) {
+                    //if (parentPath.equals(observer.getDirectory().getCanonicalPath())) {
+                    if (fileObserverPathStrings.contains(parentPath) || newFileObserverPathStrings.contains(parentPath)) {
                         debug("Skipping single file polling for " + registerFile.toString() + " since its parent directory is already being observed");
                         return;
                     }
-                }
 
                 FileFilter singleFileFilter = new FileFilter() {
                     @Override
@@ -3307,6 +3310,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
         FileAlterationObserver observer = getFileAlterationObserver(executor, parentPath, filter);
         observer.initialize();
         newFileObservers.add(observer);
+        newFileObserverPathStrings.add(parentPath);
         return observer;
     }
 
@@ -4732,23 +4736,29 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
 
             @Override
             public FileVisitResult preVisitDirectory(final Path dir, BasicFileAttributes attrs) throws IOException {
+            	
+            	String dirString = dir.normalize().toString();
+            	
                 if (trackingMode == FileTrackMode.POLLING || trackingMode == FileTrackMode.NOT_SET) {
                     // synchronize on the new observer set since only those are being updated in separate threads
                     synchronized (newFileObservers) {
-                        Set<FileAlterationObserver> tempCombinedObservers = new HashSet<FileAlterationObserver>();
-                        tempCombinedObservers.addAll(fileObservers);
-                        tempCombinedObservers.addAll(newFileObservers);
+        //                Set<FileAlterationObserver> tempCombinedObservers = new HashSet<FileAlterationObserver>();
+          //              tempCombinedObservers.addAll(fileObservers);
+            //            tempCombinedObservers.addAll(newFileObservers);
         
+                    	
+                        
+                        
                         // if this path is already observed, ignore it
-                        for (FileAlterationObserver observer : tempCombinedObservers) {
-                            if (dir.equals(observer.getDirectory().getCanonicalFile().toPath())) {
-                                debug("Skipping subdirectory " + dir.toString() + " since it already being observed");
+                        //for (FileAlterationObserver observer : tempCombinedObservers) {
+                            if (fileObserverPathStrings.contains(dirString) || newFileObserverPathStrings.contains(dirString)) {
+                                debug("Skipping subdirectory " + dirString + " since it already being observed");
                                 return FileVisitResult.CONTINUE;
                             }
-                        }
+                        //}
                         for (File omitFile : omitWatchingFiles) {
                             if (dir.startsWith(omitFile.getCanonicalPath() + File.separator)) {
-                                debug("Skipping subdirectory " + dir.toString() + " since it is in the omit files list");
+                                debug("Skipping subdirectory " + dirString + " since it is in the omit files list");
                                 return FileVisitResult.CONTINUE;
                             }
                         }
@@ -4769,13 +4779,13 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
             
                         try {
                             debug("Adding subdirectory to file observers: " + dir.toString());
-                            FileAlterationObserver observer = addFileAlterationObserver(executor, dir.toString(), singleDirectoryFilter);
+                            FileAlterationObserver observer = addFileAlterationObserver(executor, dirString, singleDirectoryFilter);
                             if (removeOnContainerRebuild) {
                                 debug("Adding to dockerfileDirectoriesFileObservers: " + dir);
                                 dockerfileDirectoriesFileObservers.add(observer);
                             }
                         } catch (Exception e) {
-                            error("Could not observe directory " + dir.toString(), e);
+                            error("Could not observe directory " + dirString, e);
                         }
                     }
                 } 
