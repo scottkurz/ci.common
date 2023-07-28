@@ -476,6 +476,8 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
         this.gradle = gradle;
         this.fileObservers = new HashSet<FileAlterationObserver>();
         this.newFileObservers = new HashSet<FileAlterationObserver>();
+        this.fileObserverPathStrings = new HashSet<String>();
+        this.newFileObserverPathStrings = new HashSet<String>();
         this.cancelledFileObservers = new HashSet<FileAlterationObserver>();
         this.pollingInterval = 100;
         if (pollingTest) {
