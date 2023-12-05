@@ -439,6 +439,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
 
     protected boolean skipInstallFeature;
 
+    
     public DevUtil(File buildDirectory, File serverDirectory, File sourceDirectory, File testSourceDirectory,
             File configDirectory, File projectDirectory, File multiModuleProjectDirectory, List<File> resourceDirs,
             boolean hotTests, boolean skipTests, boolean skipUTs, boolean skipITs, boolean skipInstallFeature, String applicationId,
@@ -448,7 +449,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
             boolean skipDefaultPorts, JavaCompilerOptions compilerOptions, boolean keepTempContainerfile,
             String mavenCacheLocation, List<ProjectModule> upstreamProjects, boolean recompileDependencies,
             String packagingType, File buildFile, Map<String, List<String>> parentBuildFiles, boolean generateFeatures,
-            Set<String> compileArtifactPaths, Set<String> testArtifactPaths, List<Path> monitoredWebResourceDirs) {
+            Set<String> compileArtifactPaths, Set<String> testArtifactPaths, List<Path> monitoredWebResourceDirs, boolean compileMojoError) {
         this.buildDirectory = buildDirectory;
         this.serverDirectory = serverDirectory;
         this.sourceDirectory = sourceDirectory;
@@ -531,6 +532,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
             this.generatedFeaturesSet = new HashSet<String>();
         }
         this.modifiedSrcBuildFile = null;
+        this.compileMojoError = compileMojoError;
     }
 
     /**
@@ -2692,6 +2694,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
     boolean triggerUpstreamJavaSourceRecompile;
     boolean initialCompile;
     boolean disableDependencyCompile;
+    boolean compileMojoError;
 
     /**
      * Watch files for changes.
@@ -3929,7 +3932,12 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
         }
 
         // initial source and test compile
-        triggerMainModuleCompile(false);
+        if (compileMojoError) {
+            info("SKSK Doing a compile because of error");
+            triggerMainModuleCompile(false);
+        } else {
+            info("SKSK Not doing an init compile");
+        }
         // build file tracking of main project
         lastBuildFileChange.put(buildFile, System.currentTimeMillis());
     }
@@ -5477,7 +5485,7 @@ public abstract class DevUtil extends AbstractContainerSupportUtil {
 
     private void triggerProjectCompile(File sourceDir, Collection<File> recompileJavaSourceSet, File testSourceDir,
             Collection<File> recompileJavaTestSet, boolean testsOnly, String packagingType) throws IOException {
-
+        
         // recompile source
         if (!testsOnly && shouldIncludeSources(packagingType)) {
             if (sourceDir.exists()) {
